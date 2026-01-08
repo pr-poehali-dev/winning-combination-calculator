@@ -53,6 +53,21 @@ const Index = () => {
 
   const frequency = calculateFrequency();
 
+  const calculateLastAppearance = () => {
+    const lastSeen: { [key: number]: number } = {};
+    for (let i = 1; i <= 45; i++) {
+      lastSeen[i] = -1;
+    }
+    
+    combinations.forEach((combo, index) => {
+      combo.numbers.forEach(num => {
+        lastSeen[num] = index;
+      });
+    });
+    
+    return lastSeen;
+  };
+
   const getPredictions = () => {
     const sorted = Object.entries(frequency)
       .sort(([, a], [, b]) => b - a)
@@ -62,7 +77,36 @@ const Index = () => {
     return sorted;
   };
 
+  const getProbabilityPredictions = () => {
+    if (combinations.length === 0) return [];
+    
+    const lastSeen = calculateLastAppearance();
+    const totalDraws = combinations.length;
+    
+    const probabilityScores = Object.entries(lastSeen).map(([num, lastIndex]) => {
+      const numInt = parseInt(num);
+      const drawsSinceLastSeen = lastIndex === -1 ? totalDraws : totalDraws - lastIndex - 1;
+      const appearanceRate = frequency[numInt] / totalDraws;
+      const expectedGap = appearanceRate > 0 ? 1 / appearanceRate : totalDraws;
+      const deviationFromExpected = drawsSinceLastSeen - expectedGap;
+      const probabilityScore = deviationFromExpected > 0 ? deviationFromExpected * (1 + appearanceRate) : 0;
+      
+      return {
+        number: numInt,
+        score: probabilityScore,
+        drawsSince: drawsSinceLastSeen,
+        frequency: frequency[numInt],
+        expectedGap: Math.round(expectedGap)
+      };
+    });
+    
+    return probabilityScores
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+  };
+
   const predictions = getPredictions();
+  const probabilityPredictions = getProbabilityPredictions();
 
   const addCombination = async () => {
     const nums = newNumbers.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 1 && n <= 45);
@@ -172,11 +216,45 @@ const Index = () => {
             <Card className="border-2 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Icon name="Target" size={24} />
-                  Предсказание выигрышных чисел
+                  <Icon name="TrendingUp" size={24} />
+                  Прогноз по теории вероятности
                 </CardTitle>
                 <CardDescription>
-                  Топ-5 наиболее вероятных чисел на основе {combinations.length} предыдущих комбинаций
+                  Числа с наибольшей вероятностью выпадения (на основе отклонения от ожидаемой частоты)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-4 justify-center">
+                  {probabilityPredictions.map((pred, index) => (
+                    <div key={pred.number} className="flex flex-col items-center gap-2 animate-scale-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white flex items-center justify-center text-2xl font-bold shadow-lg hover:scale-110 transition-transform">
+                        {pred.number}
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {pred.drawsSince} тиражей назад
+                      </Badge>
+                      <span className="text-[10px] text-muted-foreground">
+                        ожидается каждые ~{pred.expectedGap} тиражей
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                  <p className="text-sm text-center text-muted-foreground">
+                    <strong>Метод:</strong> Анализ отклонения от ожидаемой частоты выпадения с учётом истории
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="Target" size={24} />
+                  Топ по частоте выпадения
+                </CardTitle>
+                <CardDescription>
+                  Топ-5 наиболее часто выпадающих чисел (классический метод)
                 </CardDescription>
               </CardHeader>
               <CardContent>
