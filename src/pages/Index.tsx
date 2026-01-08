@@ -309,9 +309,22 @@ const Index = () => {
           <TabsContent value="history" className="space-y-6 animate-fade-in">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Icon name="List" size={24} />
-                  История комбинаций
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Icon name="List" size={24} />
+                    История комбинаций
+                  </div>
+                  {combinations.length > 0 && (
+                    <Button 
+                      onClick={clearHistory} 
+                      variant="destructive" 
+                      size="sm"
+                      className="gap-2"
+                    >
+                      <Icon name="Trash2" size={16} />
+                      Очистить историю
+                    </Button>
+                  )}
                 </CardTitle>
                 <CardDescription>
                   Добавьте новую комбинацию для обновления статистики
