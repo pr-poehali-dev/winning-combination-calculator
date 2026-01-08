@@ -21,6 +21,7 @@ const Index = () => {
 
   useEffect(() => {
     loadCombinations();
+    clearHistoryBeforeDate('2026-01-08');
   }, []);
 
   const loadCombinations = async () => {
@@ -85,6 +86,36 @@ const Index = () => {
       } catch (error) {
         console.error('Error adding combination:', error);
       }
+    }
+  };
+
+  const clearHistory = async () => {
+    if (confirm('Вы уверены, что хотите удалить всю историю комбинаций?')) {
+      try {
+        const response = await fetch(`${API_URL}?before_date=2100-01-01`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          await loadCombinations();
+        }
+      } catch (error) {
+        console.error('Error clearing history:', error);
+      }
+    }
+  };
+
+  const clearHistoryBeforeDate = async (beforeDate: string) => {
+    try {
+      const response = await fetch(`${API_URL}?before_date=${beforeDate}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        await loadCombinations();
+      }
+    } catch (error) {
+      console.error('Error clearing history:', error);
     }
   };
 

@@ -5,7 +5,7 @@ from psycopg2.extras import RealDictCursor
 from datetime import datetime
 
 def handler(event: dict, context) -> dict:
-    '''API для управления комбинациями: получение списка, добавление новых комбинаций'''
+    '''API для управления комбинациями: получение списка, добавление новых комбинаций, удаление всех записей'''
     
     method = event.get('httpMethod', 'GET')
     
@@ -14,7 +14,7 @@ def handler(event: dict, context) -> dict:
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type'
             },
             'body': '',
@@ -109,6 +109,24 @@ def handler(event: dict, context) -> dict:
                     'Access-Control-Allow-Origin': '*'
                 },
                 'body': json.dumps(result),
+                'isBase64Encoded': False
+            }
+        
+        elif method == 'DELETE':
+            cur.execute('DELETE FROM combinations')
+            deleted_count = cur.rowcount
+            conn.commit()
+            
+            cur.close()
+            conn.close()
+            
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'message': f'Deleted {deleted_count} combinations'}),
                 'isBase64Encoded': False
             }
         
