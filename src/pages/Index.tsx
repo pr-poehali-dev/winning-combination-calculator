@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,19 +12,28 @@ interface CombinationEntry {
   date: string;
 }
 
-const Index = () => {
-  const [combinations, setCombinations] = useState<CombinationEntry[]>([
-    { id: 1, numbers: [7, 14, 23, 31, 42], date: '2026-01-07' },
-    { id: 2, numbers: [3, 19, 27, 35, 44], date: '2026-01-06' },
-    { id: 3, numbers: [11, 18, 22, 29, 41], date: '2026-01-05' },
-    { id: 4, numbers: [5, 12, 23, 38, 45], date: '2026-01-04' },
-    { id: 5, numbers: [8, 16, 24, 31, 39], date: '2026-01-03' },
-    { id: 6, numbers: [2, 14, 21, 33, 42], date: '2026-01-02' },
-    { id: 7, numbers: [9, 17, 25, 34, 43], date: '2026-01-01' },
-    { id: 8, numbers: [4, 13, 23, 30, 41], date: '2025-12-31' },
-  ]);
+const API_URL = 'https://functions.poehali.dev/a9690c9d-548f-48b5-8003-956e676bfdc4';
 
+const Index = () => {
+  const [combinations, setCombinations] = useState<CombinationEntry[]>([]);
   const [newNumbers, setNewNumbers] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadCombinations();
+  }, []);
+
+  const loadCombinations = async () => {
+    try {
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      setCombinations(data.combinations || []);
+    } catch (error) {
+      console.error('Error loading combinations:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const calculateFrequency = () => {
     const frequency: { [key: number]: number } = {};
@@ -54,16 +63,28 @@ const Index = () => {
 
   const predictions = getPredictions();
 
-  const addCombination = () => {
+  const addCombination = async () => {
     const nums = newNumbers.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 1 && n <= 45);
     if (nums.length === 5) {
-      const newEntry: CombinationEntry = {
-        id: combinations.length + 1,
-        numbers: nums,
-        date: new Date().toISOString().split('T')[0]
-      };
-      setCombinations([newEntry, ...combinations]);
-      setNewNumbers('');
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            numbers: nums,
+            date: new Date().toISOString().split('T')[0]
+          })
+        });
+        
+        if (response.ok) {
+          setNewNumbers('');
+          await loadCombinations();
+        }
+      } catch (error) {
+        console.error('Error adding combination:', error);
+      }
     }
   };
 
@@ -76,6 +97,17 @@ const Index = () => {
     if (intensity > 0.2) return 'bg-primary/30 text-primary';
     return 'bg-secondary text-secondary-foreground';
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background flex items-center justify-center">
+        <div className="text-center">
+          <Icon name="Loader2" size={48} className="animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Загрузка данных...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">

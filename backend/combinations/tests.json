@@ -1,0 +1,20 @@
+{
+  "tests": [
+    {
+      "name": "Get all combinations",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Add new combination",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "numbers": [1, 2, 3, 4, 5],
+        "date": "2026-01-08"
+      },
+      "expectedStatus": 201
+    }
+  ]
+}
